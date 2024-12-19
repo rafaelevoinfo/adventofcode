@@ -1,9 +1,15 @@
 public class Maze {
+    private List<List<char>> _puzzle;
     public const char WALL = '#';
     public const char START = 'S';
     public const char END = 'E';
-
-    private List<List<char>> _puzzle;
+    public Dictionary<string, MazeNode> Nodes = new();
+    public static readonly Dictionary<Movement, List<Movement>> AllowedMovements = new(){
+        {Movement.Left, new List<Movement>(){Movement.Left, Movement.Top, Movement.Bottom} },
+        {Movement.Right, new List<Movement>(){Movement.Right, Movement.Top, Movement.Bottom} },
+        {Movement.Bottom, new List<Movement>(){Movement.Bottom, Movement.Left, Movement.Right} },
+        {Movement.Top, new List<Movement>(){Movement.Top, Movement.Left, Movement.Right} }
+    };
 
     public static readonly List<Movement> POSSIBLE_MOVEMENTS = new(){
         Movement.Left,
@@ -12,6 +18,15 @@ public class Maze {
         Movement.Bottom
     };
 
+    public static readonly Dictionary<Movement, Movement> OPOSITE_MOVEMENT = new(){
+        {Movement.Left, Movement.Right},
+        {Movement.Right, Movement.Left},
+        {Movement.Bottom, Movement.Top},
+        {Movement.Top, Movement.Bottom}
+    };
+
+
+
     public Maze(List<List<char>> puzzle) {
         _puzzle = puzzle;
     }
@@ -19,10 +34,15 @@ public class Maze {
     public long CalcLowestScore() {
         //Find start position
         MazeNode? startNode = null;
+        var mazePath = new MazePath();
         for (var line = _puzzle.Count - 1; line >= 0; line--) {
             for (var column = 0; column < _puzzle[line].Count - 1; column++) {
                 if (_puzzle[line][column] == START) {
-                    startNode = new MazeNode(this, new MazeCoordinate(line, column), true, Movement.Right);
+                    var coordinate = new MazeCoordinate(line, column);
+                    startNode = new MazeNode(this, coordinate);
+                    mazePath.AddNewNodeCoordinate(coordinate);
+
+                    Console.WriteLine($"Start Node {coordinate}");
                 }
             }
         }
@@ -30,11 +50,12 @@ public class Maze {
             Console.WriteLine("Startpoint not found");
             return -1;
         }
-        return startNode.CalcLowestScore(0, new MazePath());
+
+        return startNode.CalcLowestScore(mazePath, Movement.Right);
     }
 
     public char GetChar(MazeCoordinate coordinate) {
-        if ((coordinate.Column < _puzzle[0].Count) && (coordinate.Line < _puzzle.Count) &&
+        if ((coordinate.Line < _puzzle.Count) && (coordinate.Column < _puzzle[0].Count) &&
             (coordinate.Column >= 0) && (coordinate.Line >= 0)) {
             return _puzzle[coordinate.Line][coordinate.Column];
         }
@@ -44,75 +65,101 @@ public class Maze {
 }
 
 
+public class CalculatedScore {
+    public Dictionary<Movement, long> Scores = new(){
+        {Movement.Left, -2},
+        {Movement.Right, -2},
+        {Movement.Top, -2},
+        {Movement.Bottom, -2}
+    };
+}
+
+
 
 public class MazeNode {
-
-    private bool _isRoot;
     private Maze _maze;
     private MazeCoordinate _coordinate;
-    private Movement _currentDirection;
-    // private List<MazeNode> _children = new();
+    public Dictionary<Movement, CalculatedScore> Scores = new();
 
     private const int CHANGE_DIRECTION = 1001;
     private const int KEEP_MOVEMENT_SCORE = 1;
 
-    public MazeNode(Maze maze, MazeCoordinate coordinate, bool isRootNode, Movement direction) {
+    public MazeNode(Maze maze, MazeCoordinate coordinate) {
         _maze = maze;
         _coordinate = coordinate;
-        _isRoot = isRootNode;
-        _currentDirection = direction;
     }
 
-    public long CalcLowestScore(long currentScore, MazePath mazePath) {
+    public long CalcLowestScore(MazePath mazePath, Movement currentDirection) {
+
         var content = _maze.GetChar(_coordinate);
-        switch (content) {
-            case Maze.END: {
-                    return currentScore;
-                }
-            case Maze.WALL: {
-                    return -1;
-                }
+        if (content == Maze.END) {
+            return 0;
         }
 
         long lowestScore = long.MaxValue;
 
         foreach (var movement in Maze.POSSIBLE_MOVEMENTS) {
-            //nao pode fazer 180 graus de movimento pq estaria voltando
-            if ((movement != _currentDirection) && (Math.Abs(movement - _currentDirection) != 1)) {
+            if (!Maze.AllowedMovements[currentDirection].Contains(movement)) {
                 continue;
             }
-            long score = currentScore + (_currentDirection == movement ? KEEP_MOVEMENT_SCORE : CHANGE_DIRECTION);
-            var nextCoordinate = new MazeCoordinate(_coordinate.Line, _coordinate.Column);
+            long score = currentDirection == movement ? KEEP_MOVEMENT_SCORE : CHANGE_DIRECTION;
+            var nextNodeCoordinate = new MazeCoordinate(_coordinate.Line, _coordinate.Column);
             switch (movement) {
                 case Movement.Left: {
-                        nextCoordinate.Column--;
+                        nextNodeCoordinate.Column--;
                         break;
                     }
                 case Movement.Right: {
-                        nextCoordinate.Column++;
+                        nextNodeCoordinate.Column++;
                         break;
                     }
                 case Movement.Top: {
-                        nextCoordinate.Line--;
+                        nextNodeCoordinate.Line--;
                         break;
                     }
                 case Movement.Bottom: {
-                        nextCoordinate.Line++;
+                        nextNodeCoordinate.Line++;
                         break;
                     }
             }
-            mazePath.SaveCheckPoint();
-            try {
-                if (mazePath.AddNewNodeCoordinate(nextCoordinate)) {
-                    var node = new MazeNode(_maze, nextCoordinate, false, movement);
-                    score = node.CalcLowestScore(score, mazePath);
-                    if ((score != -1) && (score < lowestScore)) {
-                        lowestScore = score;
+
+            content = _maze.GetChar(nextNodeCoordinate);
+            if (content != Maze.START && content != Maze.WALL) {
+                mazePath.SaveCheckPoint();
+                try {
+                    if (mazePath.AddNewNodeCoordinate(nextNodeCoordinate)) {
+                        if (!_maze.Nodes.TryGetValue(nextNodeCoordinate.ToString(), out var node)) {
+                            node = new MazeNode(_maze, nextNodeCoordinate);
+                            _maze.Nodes.Add(nextNodeCoordinate.ToString(), node);
+                        }
+
+                        if (!Scores.TryGetValue(currentDirection, out var scoreNextNode) && !Scores.TryGetValue(Maze.OPOSITE_MOVEMENT[currentDirection], out scoreNextNode)) {
+                            scoreNextNode = new CalculatedScore();
+                            Scores.Add(currentDirection, scoreNextNode);
+                        }
+
+                        long scoreCalculate = scoreNextNode.Scores[movement];
+                        if (scoreCalculate == -2) {
+                            scoreCalculate = node.CalcLowestScore(mazePath, movement);
+                            scoreNextNode.Scores[movement] = scoreCalculate;
+                        }
+
+                        if (_coordinate.ToString() == "139_1") {
+                            Console.WriteLine($"{movement} - {scoreCalculate}");
+                        }
+
+
+                        if (scoreCalculate >= 0) {
+                            score += scoreCalculate;
+                            if (score < lowestScore) {
+                                lowestScore = score;
+                            }
+                        }
                     }
                 }
-            }
-            finally {
-                mazePath.RestoreCheckPoint();
+                finally {
+                    mazePath.RestoreCheckPoint();
+                }
             }
         }
         return lowestScore != long.MaxValue ? lowestScore : -1;

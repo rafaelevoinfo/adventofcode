@@ -1,7 +1,3 @@
-
-
-using System.Collections.Frozen;
-
 public enum Movement {
     Left,
     Top,
@@ -24,9 +20,12 @@ public struct MazeCoordinate {
 }
 
 public class MazePath {
-    // public Dictionary<int, List<int>> CurrentPath { get; set; }
     private List<string> _pathTaken = new();
     private Stack<int> _checkPoints = new();
+
+    public int GetCount() {
+        return _pathTaken.Count;
+    }
 
     public bool AddNewNodeCoordinate(MazeCoordinate coordinate) {
         if (!ContainNode(coordinate)) {
@@ -37,9 +36,8 @@ public class MazePath {
         return false;
     }
 
-    public long SaveCheckPoint() {
+    public void SaveCheckPoint() {
         _checkPoints.Push(_pathTaken.Count);
-        return _checkPoints.Last();
     }
 
     public void RestoreCheckPoint() {
@@ -49,17 +47,6 @@ public class MazePath {
 
     private bool ContainNode(MazeCoordinate coordinate) {
         return _pathTaken.Contains(coordinate.ToString());
-        // return false;
-        // if (CurrentPath.ContainsKey(coordinate.Line)) {
-        //     return true;
-        // }
-        // var columns = CurrentPath[coordinate.Line];
-        // if (columns.Contains(coordinate.Column)) {
-        //     return true;
-        // }
-        // return false;
-
-
     }
 
 }
