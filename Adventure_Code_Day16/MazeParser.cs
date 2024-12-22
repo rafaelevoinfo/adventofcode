@@ -1,5 +1,5 @@
 public class MazeParser {
-    public static Maze Parse(string? file) {
+    public static MazeWithPriorityQueue Parse(string? file) {
         if (!File.Exists(file)) {
             throw new FileNotFoundException("File not found");
         }
@@ -12,6 +12,6 @@ public class MazeParser {
                 result[i].Add(charArray[j]);
             }
         }
-        return new Maze(result);
+        return new MazeWithPriorityQueue(result);
     }
 }

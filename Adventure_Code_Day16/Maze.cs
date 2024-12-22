@@ -56,47 +56,64 @@ public class Maze {
         var nodesStack = new Stack<MazeNode>();
         long lowestScore = long.MaxValue;
         long score = 0;
+        var startNode = node;
         nodesStack.Push(node);
         while (nodesStack.Count > 0) {
+            Console.Write($"\rNodes in stack: {nodesStack.Count}        ");
+
             var pop = true;
             if (node.IsEnd) {
+                Console.WriteLine($"End Node found with score {score}");
                 if (score < lowestScore) {
                     lowestScore = score;
                 }
-            }
-            else {
-
-                foreach (var movement in POSSIBLE_MOVEMENTS) {
-                    if (ALLOWED_MOVEMENT[node.Direction].Contains(movement) && (!node.Directions[movement])) {
+            } else {
+                var movements = CalculateBestMoviments(node.Direction);
+                foreach (var movement in movements) {
+                    if (!node.Directions[movement]) {
                         var nextNode = GetNextNode(node, movement);
                         if (!nextNode.IsWall && !nextNode.IsStart && !nodesStack.Contains(nextNode)) {
                             node.ScoreToNext = movement == node.Direction ? KEEP_MOVEMENT_SCORE : CHANGE_DIRECTION;
-                            if (nextNode.ScoreToEnd[movement] != 0) {
-                                var aux = score + nextNode.ScoreToEnd[movement] + node.ScoreToNext;
-                                //score += nextNode.ScoreToEnd[movement] + node.ScoreToNext;
-                                // if (Maze.EQUIVALENT_MOVEMENT[node.Direction] != movement) {
-                                //     score += node.ScoreToEnd[movement] + 1000;
-                                // }
-                                // else {
-                                //     score += node.ScoreToEnd[movement];
-                                // }
+                            var allPaths = true;
+                            foreach (var m in movements) {
+                                if (nextNode.ScoreToEnd[m] == 0) {
+                                    allPaths = false;
+                                    break;
+                                }
+                            }
+                            var aux = long.MaxValue;
+                            if (allPaths) {
+                                foreach (var m in movements) {
+                                    if (nextNode.ScoreToEnd[m] != -1) {
+                                        var aux2 = score + node.ScoreToNext + nextNode.ScoreToEnd[m];
+                                        if (node.Direction != m && EQUIVALENT_MOVEMENT[node.Direction] != m) {
+                                            aux2 += 1000;
+                                        }
+                                        if (aux2 < aux) {
+                                            aux = aux2;
+                                        }
+                                    }
+                                }
+
                                 if (aux < lowestScore) {
                                     lowestScore = aux;
                                 }
                                 continue;
                             }
-                            else {
-                                node.Directions[movement] = true;
-                                if (score + node.ScoreToNext >= lowestScore) {
-                                    continue;
-                                }
-                                score += node.ScoreToNext;
-                                nodesStack.Push(nextNode);
-                                nextNode.Direction = movement;
-                                node = nextNode;
-                                pop = false;
-                                break;
+
+                            node.Directions[movement] = true;
+                            if (score + node.ScoreToNext >= lowestScore) {
+                                continue;
                             }
+                            score += node.ScoreToNext;
+                            nodesStack.Push(nextNode);
+                            nextNode.Direction = movement;
+                            node = nextNode;
+                            pop = false;
+                            break;
+
+                        } else {
+                            node.ScoreToEnd[movement] = -1;
                         }
 
                     }
@@ -109,7 +126,7 @@ public class Maze {
                 if (nodesStack.Count > 0) {
                     node = nodesStack.Peek();
                     score -= node.ScoreToNext;
-                    if (oldNode.IsEnd || (oldNode.ScoreToEnd[oldNode.Direction] != 0)) {
+                    if (oldNode.IsEnd || (oldNode.ScoreToEnd[oldNode.Direction] > 0)) {
                         //ESSE DIABO AQUI NAO FUNCIONA NAO IMPORTA O QUE FAÇO
                         node.ScoreToEnd[node.Direction] = oldNode.ScoreToEnd[oldNode.Direction] + node.ScoreToNext;
                     }
@@ -151,6 +168,26 @@ public class Maze {
             Nodes.Add(nextNodeCoordinate.ToString(), nextNode);
         }
         return nextNode;
+    }
+
+    public List<Movement> CalculateBestMoviments(Movement currentDirection) {
+        var movements = new List<Movement>();
+        movements.Add(currentDirection);
+        switch (currentDirection) {
+            case Movement.Left:
+            case Movement.Right: {
+                    movements.Add(Movement.Top);
+                    movements.Add(Movement.Bottom);
+                    break;
+                }
+            case Movement.Top:
+            case Movement.Bottom: {
+                    movements.Add(Movement.Right);
+                    movements.Add(Movement.Left);
+                    break;
+                }
+        }
+        return movements;
     }
 
     public char GetChar(MazeCoordinate coordinate) {

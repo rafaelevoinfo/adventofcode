@@ -12,12 +12,10 @@ try {
     timer.Stop();
     if (lowestScore <= 0) {
         Console.WriteLine($"It was not possible to calculate the lowest score. Sorry :(");
-    }
-    else {
+    } else {
         Console.WriteLine($"The lowest score is {lowestScore}. Time: {timer.ElapsedMilliseconds} ms");
     }
-}
-catch (Exception e) {
+} catch (Exception e) {
     Console.WriteLine(e.Message);
 }
 
