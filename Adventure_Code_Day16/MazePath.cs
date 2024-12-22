@@ -5,7 +5,7 @@ public enum Movement {
     Bottom
 }
 
-public struct MazeCoordinate {
+public class MazeCoordinate {
     public int Line { get; set; }
     public int Column { get; set; }
 
