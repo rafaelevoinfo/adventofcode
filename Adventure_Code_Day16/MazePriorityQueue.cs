@@ -68,14 +68,11 @@ public class MazeWithPriorityQueue
             var node = pq.Dequeue();
             if (_puzzle[node.Position.Line][node.Position.Column] == END)
             {
-                if (node.Score <= lowestScore)
+                lowestScore = node.Score;
+                while (node.Parent != null)
                 {
-                    lowestScore = node.Score;
-                    while (node.Parent != null)
-                    {
-                        bestPaths.Add(node.Position.ToString());
-                        node = node.Parent;
-                    }
+                    bestPaths.Add(node.Position.ToString());
+                    node = node.Parent;
                 }
 
                 continue;
