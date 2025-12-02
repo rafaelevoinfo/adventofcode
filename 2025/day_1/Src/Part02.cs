@@ -27,14 +27,4 @@ while (!reader.EndOfStream) {
     }
 }
 
-Console.WriteLine("Number of times zero was passed: " + count);
-
-/*Valores errados :
- - 5953 -> mais proximo ate o momento
- - 6461
- - 7101
- - 7135
- - 7409
- - 7423
- - 7656
-*/
+Console.WriteLine(count);

@@ -26,8 +26,4 @@ while (!reader.EndOfStream) {
         }
     }
 }
-Console.WriteLine("Number of times zero was passed: " + count);
-
-/*
-Resposta correta: 1097 
-*/
+Console.WriteLine(count);
