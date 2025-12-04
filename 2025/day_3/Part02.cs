@@ -6,7 +6,7 @@ while (!reader.EndOfStream) {
     var batteriesLength = 12;
     var batteries = new short[batteriesLength];
     for (var i = 0; i < bank?.Length; i++) {
-        var number = short.Parse(bank.Substring(i, 1));
+        var number = (short)(bank[i] - '0');//short.Parse(bank.AsSpan(i, 1));
         var startIndex = Math.Max(0, i + batteriesLength - bank.Length);
         for (var j = startIndex; j < batteriesLength; j++) {
             if (number > batteries[j] && i <= (bank.Length - (batteriesLength - j))) {
