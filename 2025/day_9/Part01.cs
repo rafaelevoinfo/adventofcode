@@ -7,10 +7,6 @@ while (!reader.EndOfStream) {
     coords.Add((long.Parse(line[1]), long.Parse(line[0])));
 }
 
-coords = coords
-    .OrderBy(coord => coord.Row)
-        .ThenBy(coord => coord.Col)
-        .ToList();
 
 long result = 0;
 for (var i = 0; i < coords.Count; i++) {
