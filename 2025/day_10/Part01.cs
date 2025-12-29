@@ -27,7 +27,7 @@ Console.WriteLine(result);
 
 static int FindLowerPath(Machine machine)
 {
-    var visistedStates = new HashSet<State>();
+    var visistedStates = new HashSet<(int, int)>();
     var states = new Queue<State>();
 
     foreach (var button in machine.Buttons)
@@ -60,7 +60,7 @@ static int FindLowerPath(Machine machine)
                 {
                     return newState.Level;
                 }
-                if (!visistedStates.Contains(newState))
+                if (visistedStates.Add((newState.CurrentState, newState.ButtonUsed)))
                 {
                     states.Enqueue(newState);
                 }
